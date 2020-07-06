@@ -3679,20 +3679,24 @@ def test_product_restricted_fields_permissions(
     permission_manage_orders,
     product,
     field,
+    channel_USD,
 ):
     """Ensure non-public (restricted) fields are correctly requiring
     the 'manage_products' permission.
     """
     query = """
-    query Product($id: ID!) {
-        product(id: $id) {
+    query Product($id: ID!, $channelSlug: String) {
+        product(id: $id, channelSlug: $channelSlug) {
             %(field)s
         }
     }
     """ % {
         "field": "%s { __typename }" % field
     }
-    variables = {"id": graphene.Node.to_global_id("Product", product.pk)}
+    variables = {
+        "id": graphene.Node.to_global_id("Product", product.pk),
+        "channelSlug": channel_USD.slug,
+    }
     permissions = [permission_manage_orders, permission_manage_products]
     response = staff_api_client.post_graphql(query, variables, permissions)
     content = get_graphql_content(response)
@@ -3717,13 +3721,14 @@ def test_variant_restricted_fields_permissions(
     product,
     field,
     is_nested,
+    channel_USD,
 ):
     """Ensure non-public (restricted) fields are correctly requiring
     the 'manage_products' permission.
     """
     query = """
-    query ProductVariant($id: ID!) {
-        productVariant(id: $id) {
+    query ProductVariant($id: ID!, $channelSlug: String) {
+        productVariant(id: $id, channelSlug: $channelSlug) {
             %(field)s
         }
     }
@@ -3731,7 +3736,10 @@ def test_variant_restricted_fields_permissions(
         "field": field if not is_nested else "%s { __typename }" % field
     }
     variant = product.variants.first()
-    variables = {"id": graphene.Node.to_global_id("ProductVariant", variant.pk)}
+    variables = {
+        "id": graphene.Node.to_global_id("ProductVariant", variant.pk),
+        "channelSlug": channel_USD.slug,
+    }
     permissions = [permission_manage_orders, permission_manage_products]
     response = staff_api_client.post_graphql(query, variables, permissions)
     content = get_graphql_content(response)
@@ -3739,11 +3747,11 @@ def test_variant_restricted_fields_permissions(
 
 
 def test_variant_digital_content(
-    staff_api_client, permission_manage_products, digital_content
+    staff_api_client, permission_manage_products, digital_content, channel_USD
 ):
     query = """
-    query Margin($id: ID!) {
-        productVariant(id: $id) {
+    query Margin($id: ID!, $channelSlug: String) {
+        productVariant(id: $id, channelSlug: $channelSlug) {
             digitalContent{
                 id
             }
@@ -3751,7 +3759,10 @@ def test_variant_digital_content(
     }
     """
     variant = digital_content.product_variant
-    variables = {"id": graphene.Node.to_global_id("ProductVariant", variant.pk)}
+    variables = {
+        "id": graphene.Node.to_global_id("ProductVariant", variant.pk),
+        "channelSlug": channel_USD.slug,
+    }
     permissions = [permission_manage_products]
     response = staff_api_client.post_graphql(query, variables, permissions)
     content = get_graphql_content(response)
