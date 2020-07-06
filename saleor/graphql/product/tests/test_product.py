@@ -3548,10 +3548,10 @@ def test_product_update_variants_names(mock__update_variants_names, product_type
     assert mock__update_variants_names.call_count == 1
 
 
-def test_product_variants_by_ids(user_api_client, variant):
+def test_product_variants_by_ids(user_api_client, variant, channel_USD):
     query = """
-        query getProduct($ids: [ID!]) {
-            productVariants(ids: $ids, first: 1) {
+        query getProduct($ids: [ID!], $channelSlug: String) {
+            productVariants(ids: $ids, first: 1, channelSlug: $channelSlug) {
                 edges {
                     node {
                         id
@@ -3562,7 +3562,7 @@ def test_product_variants_by_ids(user_api_client, variant):
     """
     variant_id = graphene.Node.to_global_id("ProductVariant", variant.id)
 
-    variables = {"ids": [variant_id]}
+    variables = {"ids": [variant_id], "channelSlug": channel_USD.slug}
     response = user_api_client.post_graphql(query, variables)
     content = get_graphql_content(response)
     data = content["data"]["productVariants"]
@@ -3570,10 +3570,10 @@ def test_product_variants_by_ids(user_api_client, variant):
     assert len(data["edges"]) == 1
 
 
-def test_product_variants_no_ids_list(user_api_client, variant):
+def test_product_variants_no_ids_list(user_api_client, variant, channel_USD):
     query = """
-        query getProductVariants {
-            productVariants(first: 10) {
+        query getProductVariants($channelSlug: String) {
+            productVariants(first: 10, channelSlug: $channelSlug) {
                 edges {
                     node {
                         id
@@ -3582,7 +3582,8 @@ def test_product_variants_no_ids_list(user_api_client, variant):
             }
         }
     """
-    response = user_api_client.post_graphql(query)
+    variables = {"channelSlug": channel_USD.slug}
+    response = user_api_client.post_graphql(query, variables)
     content = get_graphql_content(response)
     data = content["data"]["productVariants"]
     assert len(data["edges"]) == ProductVariant.objects.count()
@@ -3592,7 +3593,12 @@ def test_product_variants_no_ids_list(user_api_client, variant):
     "variant_price_amount, api_variant_price", [(200, 200), (0, 0)],
 )
 def test_product_variant_price(
-    variant_price_amount, api_variant_price, user_api_client, variant, stock
+    variant_price_amount,
+    api_variant_price,
+    user_api_client,
+    variant,
+    stock,
+    channel_USD,
 ):
     # Set price override on variant that is different than product price
     product = variant.product
@@ -3601,8 +3607,8 @@ def test_product_variant_price(
     # product.variants.exclude(id=variant.pk).delete()
 
     query = """
-        query getProductVariants($id: ID!) {
-            product(id: $id) {
+        query getProductVariants($id: ID!, $channelSlug: String) {
+            product(id: $id, channelSlug: $channelSlug) {
                 variants {
                     pricing {
                         priceUndiscounted {
@@ -3616,7 +3622,7 @@ def test_product_variant_price(
         }
         """
     product_id = graphene.Node.to_global_id("Product", variant.product.id)
-    variables = {"id": product_id}
+    variables = {"id": product_id, "channelSlug": channel_USD.slug}
     response = user_api_client.post_graphql(query, variables)
     content = get_graphql_content(response)
     data = content["data"]["product"]
