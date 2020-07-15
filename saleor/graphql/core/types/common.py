@@ -109,7 +109,14 @@ class CheckoutError(Error):
     code = CheckoutErrorCode(description="The error code.", required=True)
 
 
-class DiscountError(Error):
+class ProductWithoutVariantError(Error):
+    products = graphene.List(
+        graphene.NonNull(graphene.ID),
+        description="List of products IDs which causes the error.",
+    )
+
+
+class DiscountError(ProductWithoutVariantError):
     code = DiscountErrorCode(description="The error code.", required=True)
 
 
@@ -155,6 +162,10 @@ class PermissionGroupError(Error):
 
 class ProductError(Error):
     code = ProductErrorCode(description="The error code.", required=True)
+
+
+class CollectionProductError(ProductWithoutVariantError, ProductError):
+    pass
 
 
 class ProductAttributeError(ProductError):
@@ -223,7 +234,7 @@ class WebhookError(Error):
     code = WebhookErrorCode(description="The error code.", required=True)
 
 
-class WishlistError(Error):
+class WishlistError(ProductWithoutVariantError):
     code = WishlistErrorCode(description="The error code.", required=True)
 
 
